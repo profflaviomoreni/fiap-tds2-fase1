@@ -9,17 +9,26 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import br.com.fiap.tds2.fase1.exceptions.LoginAtivoException;
 import br.com.fiap.tds2.fase1.exceptions.LoginExcedeuTentativasException;
 import br.com.fiap.tds2.fase1.exceptions.LoginExpiradoException;
 import br.com.fiap.tds2.fase1.exceptions.LoginInvalidoException;
 import br.com.fiap.tds2.fase1.exceptions.LoginIpInvalidoException;
 import br.com.fiap.tds2.fase1.model.UsuarioModel;
+import br.com.fiap.tds2.fase1.business.LoginFacade;
 
 @SuppressWarnings("serial")
 @WebServlet("/Login")
 public class LoginController extends HttpServlet {
 	
+	
+	private static final Logger LOGGER = LogManager.getLogger(LoginController.class.getName());
+	
+	private final LoginFacade loginFacade = new LoginFacade();
+
 
 	public LoginController() {
         super();
@@ -30,36 +39,21 @@ public class LoginController extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		try { 
-			System.out.println("Execuanto o Servlet LoginController");
 			
 			UsuarioModel usuarioModel = new UsuarioModel();
 			usuarioModel.setLogin(request.getParameter("login"));
 			usuarioModel.setSenha(request.getParameter("senha"));
-			System.out.println("Recuperando os dados do login");
 			
-			validarUsuarioAtivo(usuarioModel);
-			System.out.println("Validando dados Usuario");
-			
-			validarTentativasdeLogin(usuarioModel);
-			System.out.println("Validando tentativas");
-			
-			validarUsuarioExpirado(usuarioModel);
-			System.out.println("Validando Usuario Expirado");
-			
-			validarIp(usuarioModel);
-			System.out.println("Validando Ip");
-			
-			validarLogin(usuarioModel);
-			System.out.println("Validando Login e Senha");
+			loginFacade.loginWeb(usuarioModel);
 			
 			RequestDispatcher despachar = request.getRequestDispatcher("home.jsp");
 			despachar.forward(request, response);
 			
 		} catch ( LoginAtivoException | LoginExcedeuTentativasException | LoginExpiradoException| LoginInvalidoException | LoginIpInvalidoException  e) {
-			System.out.println("Erro ");
+			LOGGER.error(e.getMessage());
 			response.sendRedirect("erro.jsp?msg=" + e.getMessage());
 	    } catch (Exception e) {
-			System.out.println("Ocorreu um erro muito crítico, desconhecido pela aplicação");
+	    	LOGGER.error("Ocorreu um erro muito crítico, desconhecido pela aplicação");
 			response.sendRedirect("erro.jsp?msg=Erro crítico");
 		}
 	}
